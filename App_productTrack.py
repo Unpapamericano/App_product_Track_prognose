@@ -4,20 +4,15 @@ from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
-from kivy.uix.spinner import Spinner
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from statsmodels.tsa.arima.model import ARIMA
-import matplotlib
-matplotlib.use('TkAgg')
 
 kivy.require('2.0.0')
 
 class KpiApp(App):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Daten initialisieren
         self.data = {
             'Datum': pd.date_range(start="2023-01-01", periods=30, freq='D'),
             'Gesamtlieferungen': np.random.randint(50, 200, 30),
@@ -35,10 +30,6 @@ class KpiApp(App):
         layout.add_widget(Label(text="Letzte Daten von Gesamtlieferungen bearbeiten:", size_hint_y=None, height=44))
         layout.add_widget(self.last_data_input)
         
-        # Dropdown-Menü hinzufügen, um die Visualisierung auszuwählen
-        self.spinner = Spinner(text='Liniendiagramm', values=('Liniendiagramm', 'Balkendiagramm', 'Punktdiagramm', 'Histogramm', 'Kreisdiagramm'), size_hint_y=None, height=44)
-        layout.add_widget(self.spinner)
-        
         btn = Button(text="Visualisierung anzeigen", size_hint_y=None, height=44)
         btn.bind(on_press=self.show_plot)
         
@@ -47,27 +38,32 @@ class KpiApp(App):
         return layout
 
     def show_plot(self, instance):
-        # ... [Code, um Daten zu erhalten und zu verarbeiten] ...
+        fig, axs = plt.subplots(3, 1, figsize=(10, 12))
         
-        plt.figure(figsize=(10, 6))
+        # Liniendiagramm
+        axs[0].plot(self.data['Datum'], self.data['Gesamtlieferungen'], label="Gesamtlieferungen")
+        axs[0].set_title("Liniendiagramm")
+        axs[0].legend()
         
-        # Auswahl des Visualisierungstyps
-        if self.spinner.text == 'Liniendiagramm':
-            pass  # Dies ist nur ein Platzhalter, hier sollte der Code für das Liniendiagramm eingefügt werden.
-        elif self.spinner.text == 'Balkendiagramm':
-            pass  # Code für Balkendiagramm
-        elif self.spinner.text == 'Punktdiagramm':
-            pass  # Code für Punktdiagramm
-        elif self.spinner.text == 'Histogramm':
-            pass  # Code für Histogramm
-        elif self.spinner.text == 'Kreisdiagramm':
-            pass  # Code für Kreisdiagramm
+        # Balkendiagramm
+        bar_width = 0.35
+        index = np.arange(len(self.data['Datum']))
+        bar1 = axs[1].bar(index, self.data['Gesamtlieferungen'], bar_width, label="Gesamtlieferungen")
+        bar2 = axs[1].bar(index + bar_width, self.data['Produktretouren'], bar_width, label="Produktretouren")
+        axs[1].set_title("Balkendiagramm")
+        axs[1].set_xticks(index + bar_width / 2)
+        axs[1].set_xticklabels(self.data['Datum'].strftime('%Y-%m-%d'), rotation=45)
+        axs[1].legend()
+
+        # Kreisdiagramm
+        total = sum(self.data['Gesamtlieferungen'])
+        percentages = [sum(self.data['Gesamtlieferungen'])/total, sum(self.data['Produktretouren'])/total, sum(self.data['DefekteProdukte'])/total]
+        labels = ["Gesamtlieferungen", "Produktretouren", "DefekteProdukte"]
+        axs[2].pie(percentages, labels=labels, autopct='%1.1f%%', startangle=90)
+        axs[2].set_title("Kreisdiagramm")
         
-        plt.ion()  # Aktiviert den interaktiven Modus
-        plt.draw()  # Zeichnet das Diagramm
-        plt.pause(0.001)  # Ein kurzes Pause, um das GUI-Event zu verarbeiten
+        plt.tight_layout()
         plt.show()
-        plt.ioff()  # Deaktiviert den interaktiven Modus
 
 if __name__ == '__main__':
     KpiApp().run()
